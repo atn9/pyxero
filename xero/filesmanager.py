@@ -9,7 +9,7 @@ from .constants import XERO_FILES_URL
 from .exceptions import (
     XeroBadRequest, XeroExceptionUnknown, XeroForbidden, XeroInternalError,
     XeroNotAvailable, XeroNotFound, XeroNotImplemented, XeroRateLimitExceeded,
-    XeroUnauthorized, XeroUnsupportedMediaType
+    XeroUnauthorized, XeroUnsupportedMediaType, XeroTenantIdNotSet,
 )
 
 
@@ -59,6 +59,15 @@ class FilesManager(object):
         """
         def wrapper(*args, **kwargs):
             uri, params, method, body, headers, singleobject, files = func(*args, **kwargs)
+
+            if headers is None:
+                headers = {}
+
+            if hasattr(self.credentials, 'tenant_id'):
+                if self.credentials.tenant_id:
+                    headers['Xero-tenant-id'] = self.credentials.tenant_id
+                else:
+                    raise XeroTenantIdNotSet
 
             response = getattr(requests, method)(
                     uri, data=body, headers=headers, auth=self.credentials.oauth,
